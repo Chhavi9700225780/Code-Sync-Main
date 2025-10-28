@@ -1,0 +1,91 @@
+sudo apt update
+sudo apt install fontconfig openjdk-21-jre
+java -version
+
+
+
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install jenkins
+
+
+sudo apt install docker.io -y
+
+sudo usermod -aG docker jenkins
+sudo usermod -aG docker ubuntu 
+sudo systemctl restart docker
+sudo chmod 777 /var/run/docker.sock
+docker ps
+
+docker run -d --name sonarqube -p 9000:9000 sonarqube:community
+docker ps 
+
+sudo apt-get install wget gnupg
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy
+
+
+
+# 1. Download the kubectl binary for v1.33.5
+curl -LO "https://dl.k8s.io/release/v1.33.5/bin/linux/amd64/kubectl"
+
+# 2. Download the checksum file
+curl -LO "https://dl.k8s.io/release/v1.33.5/bin/linux/amd64/kubectl.sha256"
+
+# 3. Check the binary against the checksum (This is the correct syntax)
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+
+# 4. Install kubectl (This is the correct syntax)
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# 5. Verify the client version (This is the correct syntax)
+kubectl version --client
+
+
+
+# install slack , docker plugin on jenkins server and then go to slack dashboard in your browser then go to 
+#https:/api.slack/apps
+#here click on create an app
+# choose crete with menifest and paste the below code in it then go to install apps from the left slidebar and then 
+# copy the token come to system management in jenkins go to slack part create credencials 
+# global , kind = secret , name id = slack-token
+# add all the details 
+{
+  "display_information": {
+    "name": "Jenkins"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "Jenkins App Name",
+      "always_online": true
+    }
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "GitHub Actions",
+        "changelog:read",
+        "chat:write",
+        "chat:write.customize",
+        "files:write",
+        "reactions:write",
+        "users:read",
+        "users:read.email"
+      ]
+    }
+  },
+  "settings": {
+    "interactivity": {
+      "is_enabled": true
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
+  }
+}

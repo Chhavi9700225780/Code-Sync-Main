@@ -1,0 +1,48 @@
+# docker-compose.yml
+version: '3.8' # Specify docker-compose version
+
+services:
+  # Backend Service (Node.js/Express)
+  backend:
+    container_name: codesync-backend
+    build:
+      context: ./server # Path to the backend directory
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000" # Map host port 3000 to container port 3000
+    env_file:
+      - ./server/.env # Load environment variables from .env file in server directory
+    environment:
+      # You can override or add non-secret variables here if needed
+      NODE_ENV: development # Use development mode locally
+      PORT: 3000 # Ensure PORT is set if not in .env
+    # Optional: Add volumes for development hot-reloading (more complex setup)
+    # volumes:
+    #   - ./server/src:/app/src # Mount source code
+    #   - /app/node_modules # Prevent host node_modules from overwriting container's
+    # command: npm run dev # If using volumes for dev, use the dev command
+
+  # Frontend Service (React/Vite served by Nginx)
+  frontend:
+    container_name: codesync-frontend
+    build:
+      context: ./client # Path to the client directory
+      dockerfile: Dockerfile
+      args:
+        # Pass the backend URL accessible *within* the Docker network
+        # 'backend' is the service name defined above, 3000 is the backend container port
+        VITE_BACKEND_URL: http://backend:3000
+    ports:
+      - "5173:80" # Map host port 5173 to Nginx container port 80
+    depends_on:
+      - backend # Wait for the backend service to start (doesn't guarantee readiness)
+    # Optional: Add volumes for development hot-reloading (requires Vite config changes)
+    # volumes:
+    #   - ./client/src:/app/src
+    #   - ./client/public:/app/public
+    #   - /app/node_modules
+    # command: npm run dev # If using volumes for dev, run Vite dev server
+
+# Note: Docker Compose automatically creates a default network
+# connecting these services, allowing 'frontend' to reach 'backend'
+# via the service name 'backend'.

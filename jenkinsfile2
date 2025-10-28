@@ -1,0 +1,282 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'nodejs'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'sonar-server'
+        // change these if you use different credential IDs / registry names
+        DOCKER_CREDENTIALS = 'docker'        // credentialsId in Jenkins for Docker registry (username/password)
+        DOCKER_REGISTRY    = 'docker.io'     // registry host (leave empty or change if using GHCR/ECR)
+        DOCKER_NAMESPACE   = 'chhavi91'// change to your dockerhub/org (e.g. chhavi91)
+        // image tags will use build number for immutability
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+    }
+
+    options {
+        skipDefaultCheckout(true)
+        timeout(time: 60, unit: 'MINUTES')
+    }
+
+    stages {
+        stage('Clean workspace') {
+            steps { cleanWs() }
+        }
+
+        stage('Checkout') {
+            steps {
+                // checkout root repository
+                git branch: 'main', url: 'https://github.com/Chhavi9700225780/Codesync-Code.git'
+            }
+        }
+
+        stage('Install dependencies') {
+            parallel {
+                stage('Install - client') {
+                    steps {
+                        dir('client') {
+                            echo "Installing client deps..."
+                            sh 'npm ci || npm install'
+                        }
+                    }
+                }
+                stage('Install - server') {
+                    steps {
+                        dir('server') {
+                            echo "Installing server deps..."
+                            sh 'npm ci || npm install'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            stages {
+                stage('Sonar - client') {
+                    steps {
+                        dir('client') {
+                            withSonarQubeEnv('sonar-server') {
+                                sh '''
+                                echo "🔍 Sonar scan - client"
+                                npx @sonar/scan \
+                                  -Dsonar.projectKey=Codesync-client \
+                                  -Dsonar.projectName=Codesync-client \
+                                  -Dsonar.sources=src \
+                                  -Dsonar.exclusions=node_modules/**,dist/**,public/** \
+                                  -Dsonar.host.url=$SONAR_HOST_URL \
+                                  -Dsonar.login=$SONAR_AUTH_TOKEN
+                                '''
+                            }
+                        }
+                    }
+                }
+                stage('Sonar - server') {
+                    steps {
+                        dir('server') {
+                            withSonarQubeEnv('sonar-server') {
+                                sh '''
+                                echo "🔍 Sonar scan - server"
+                                npx @sonar/scan \
+                                  -Dsonar.projectKey=Codesync-server \
+                                  -Dsonar.projectName=Codesync-server \
+                                  -Dsonar.sources=src \
+                                  -Dsonar.exclusions=node_modules/**,dist/** \
+                                  -Dsonar.host.url=$SONAR_HOST_URL \
+                                  -Dsonar.login=$SONAR_AUTH_TOKEN
+                                '''
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    // Wait for quality gate, fail build if gate fails (change abortPipeline toggle if desired)
+                    waitForQualityGate abortPipeline: true, credentialsId: 'sonar-token'
+                }
+            }
+        }
+
+        stage('Security Scans - Dependencies') {
+            parallel {
+                stage('OWASP - client') {
+                    steps {
+                        dir('client') {
+                            echo "Running OWASP Dependency Check (client)"
+                            dependencyCheck additionalArguments: '--scan ./ --format XML --out .', odcInstallation: 'owasp-dp-check'
+                            dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                        }
+                    }
+                }
+                stage('OWASP - server') {
+                    steps {
+                        dir('server') {
+                            echo "Running OWASP Dependency Check (server)"
+                            dependencyCheck additionalArguments: '--scan ./ --format XML --out .', odcInstallation: 'owasp-dp-check'
+                            dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Static Filesystem Scan (TRIVY FS)') {
+            parallel {
+                stage('TRIVY - client FS') {
+                    steps {
+                        dir('client') {
+                            sh 'trivy fs . --exit-code 0 > ../trivy-client-fs.txt || true'
+                            archiveArtifacts artifacts: 'trivy-client-fs.txt', allowEmptyArchive: true
+                        }
+                    }
+                }
+                stage('TRIVY - server FS') {
+                    steps {
+                        dir('server') {
+                            sh 'trivy fs . --exit-code 0 > ../trivy-server-fs.txt || true'
+                            archiveArtifacts artifacts: 'trivy-server-fs.txt', allowEmptyArchive: true
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    // Build both images and tag with build number
+                    withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS, usernameVariable: 'REG_USER', passwordVariable: 'REG_PWD')]) {
+                        sh """
+                            echo "$REG_PWD" | docker login ${env.DOCKER_REGISTRY} -u "$REG_USER" --password-stdin
+                        """
+
+                        // client image
+                        dir('client') {
+                            echo "Building client image..."
+                            // if client Dockerfile expects build args (like API keys), add withCredentials just like earlier
+                            sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-client:${IMAGE_TAG} ."
+                        }
+
+                        // server image
+                        dir('server') {
+                            echo "Building server image..."
+                            sh "docker build -t ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-server:${IMAGE_TAG} ."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS, usernameVariable: 'REG_USER', passwordVariable: 'REG_PWD')]) {
+                        sh """
+                            echo "$REG_PWD" | docker login ${env.DOCKER_REGISTRY} -u "$REG_USER" --password-stdin
+                            docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-client:${IMAGE_TAG}
+                            docker push ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-server:${IMAGE_TAG}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('TRIVY Image Scan') {
+            parallel {
+                stage('TRIVY - client image') {
+                    steps {
+                        sh "trivy image ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-client:${IMAGE_TAG} --exit-code 0 > trivy-client-image.txt || true"
+                        archiveArtifacts artifacts: 'trivy-client-image.txt', allowEmptyArchive: true
+                    }
+                }
+                stage('TRIVY - server image') {
+                    steps {
+                        sh "trivy image ${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-server:${IMAGE_TAG} --exit-code 0 > trivy-server-image.txt || true"
+                        archiveArtifacts artifacts: 'trivy-server-image.txt', allowEmptyArchive: true
+                    }
+                }
+            }
+        }
+
+        stage('Optional: Docker-Compose Integration Smoke Test') {
+            steps {
+                script {
+                    // If you have a docker-compose.yml in repo root that references images by tag or build,
+                    // this will pull the newly pushed images (or build) and run an integration check.
+                    // If you don't want this, comment out this stage.
+                    dir('.') {
+                        sh '''
+                        echo "Starting docker-compose smoke test..."
+                        # replace IMAGE_TAG in docker-compose if you template it, or ensure docker-compose.yml uses the pushed tags
+                        docker-compose down --remove-orphans || true
+                        docker-compose pull || true
+                        docker-compose up -d
+                        # a simple wait + healthcheck: adjust curl endpoint if needed
+                        sleep 8
+                        docker-compose ps
+                        # run a simple smoke API call (adjust path to your server health endpoint)
+                        set +e
+                        curl --fail http://localhost:5000/health || curl --fail http://localhost:4000/ || true
+                        set -e
+                        docker-compose down
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Deploy using kubectl; make sure your deployment manifests reference the correct images (use IMAGE_TAG)
+                    // Optionally you can use 'sed' to replace placeholders in yamls with actual tags
+                    withKubeConfig(credentialsId: 'k8s') {
+                        // Example: replace placeholders in a k8s manifest directory 'k8s/'
+                        sh '''
+                        echo "Updating k8s manifests with new image tags..."
+                        find k8s -type f -name "*.yml" -exec sed -i "s|__CLIENT_IMAGE__|${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-client:${IMAGE_TAG}|g" {} +
+                        find k8s -type f -name "*.yml" -exec sed -i "s|__SERVER_IMAGE__|${DOCKER_REGISTRY}/${DOCKER_NAMESPACE}/codesync-server:${IMAGE_TAG}|g" {} +
+                        kubectl apply -f k8s/
+                        kubectl rollout status deployment/codesync-client --timeout=120s || true
+                        kubectl rollout status deployment/codesync-server --timeout=120s || true
+                        kubectl get all -o wide
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                // Ensure docker logout for security
+                sh 'docker logout || true'
+
+                def resultColor = (currentBuild.result == 'SUCCESS') ? '#2eb886' :
+                                  (currentBuild.result == 'FAILURE') ? '#ff0000' : '#daa038'
+
+                slackSend (
+                    channel: '#devops-alerts',
+                    color: resultColor,
+                    message: """*🚀 Jenkins Build Notification*
+*Project:* ${env.JOB_NAME}
+*Build:* #${env.BUILD_NUMBER}
+*Status:* ${currentBuild.currentResult}
+*URL:* <${env.BUILD_URL}|Open Build>
+"""
+                )
+            }
+        }
+        cleanup {
+            // optional: remove any dangling images built on agent
+            sh 'docker image prune -f || true'
+        }
+    }
+}
