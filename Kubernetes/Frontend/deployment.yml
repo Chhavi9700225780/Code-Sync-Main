@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codesync-frontend
+  labels:
+    app: codesync-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: codesync-frontend
+  template:
+    metadata:
+      labels:
+        app: codesync-frontend
+    spec:
+      containers:
+      - name: codesync-frontend
+        image: __CLIENT_IMAGE__           # e.g. docker.io/youruser/codesync-client:123
+        ports:
+        - containerPort: 80
+        env:
+        - name: REACT_APP_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: codesync-config
+              key: API_URL
+        readinessProbe:
+          httpGet:
+            path: /  # or your frontend health path
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 30

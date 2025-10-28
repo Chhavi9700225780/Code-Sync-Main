@@ -28,7 +28,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // checkout root repository
-                git branch: 'main', url: 'https://github.com/Chhavi9700225780/Codesync-Code.git'
+                git branch: 'main', url: 'https://github.com/Chhavi9700225780/Code-Sync-Main.git'
             }
         }
 
@@ -235,8 +235,9 @@ pipeline {
             steps {
                 script {
                     // Deploy using kubectl; make sure your deployment manifests reference the correct images (use IMAGE_TAG)
+                 dir('Kubernetes') {
                     // Optionally you can use 'sed' to replace placeholders in yamls with actual tags
-                    withKubeConfig(credentialsId: 'k8s') {
+                     withKubeConfig(credentialsId: 'k8s') {
                         // Example: replace placeholders in a k8s manifest directory 'k8s/'
                         sh '''
                         echo "Updating k8s manifests with new image tags..."
@@ -247,7 +248,8 @@ pipeline {
                         kubectl rollout status deployment/codesync-server --timeout=120s || true
                         kubectl get all -o wide
                         '''
-                    }
+                     }
+                  }
                 }
             }
         }
