@@ -9,6 +9,11 @@
 
 ---
 
+<img width="1918" height="886" alt="image" src="https://github.com/user-attachments/assets/96611118-b859-4a13-8dc8-c03060375a10" />
+
+
+---
+
 
 ```
 CodeSync/
@@ -66,8 +71,6 @@ Below is a **template README** you can paste directly into your repo — it’s 
 ### 🧩 **CodeSync – Real-Time Collaborative Code Editor**
 
 
-<img width="1090" height="642" alt="image" src="https://github.com/user-attachments/assets/e5525fc6-9bcc-4cb6-8604-5d8d44f0d470" />
-
 
 > 🚀 A collaborative, real-time code editor that lets multiple users write, execute, and chat together — powered by a full DevSecOps workflow.
 
@@ -112,6 +115,9 @@ The project demonstrates complete DevSecOps automation — from IaC provisioning
 * Dockerized microservices (frontend & backend)
 * Monitoring with Prometheus, Grafana & Alertmanager
 
+---
+
+![Architecture Diagram](assets/arch-diag.gif)
 ---
 
 ### 🧰 **Tech Stack**
