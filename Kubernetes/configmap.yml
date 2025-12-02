@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: codesync-config
-data:
-  API_URL: "http://codesync-backend:5000"   # frontend will use this via env
-  NODE_ENV: "production"
