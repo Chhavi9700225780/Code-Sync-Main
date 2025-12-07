@@ -28,20 +28,53 @@ spec:
         image: 619071310531.dkr.ecr.us-east-1.amazonaws.com/backend:latest
         imagePullPolicy: Always
         env:
-          - name: POSTGRES_CONN_STR
-            value: postgresql://$(POSTGRES_USERNAME):$(POSTGRES_PASSWORD)@postgres-svc:5432/mydatabase
-          - name: POSTGRES_USERNAME
+          - name: DATABASE_URL
             valueFrom:
               secretKeyRef:
-                name: postgres-sec
-                key: username
-          - name: POSTGRES_PASSWORD
+                name: backend-secret
+                key: DATABASE_URL
+
+          - name: FRONTEND_URL
             valueFrom:
               secretKeyRef:
-                name: postgres-sec
-                key: password
-          - name: POSTGRES_DB
-            value: mydatabase
+                name: backend-secret
+                key: FRONTEND_URL
+
+          - name: GITHUB_CALLBACK_URL
+            valueFrom:
+              secretKeyRef:
+                name: backend-secret
+                key: GITHUB_CALLBACK_URL
+
+          - name: GITHUB_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: backend-secret
+                key: GITHUB_CLIENT_ID
+
+          - name: GITHUB_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: backend-secret
+                key: GITHUB_CLIENT_SECRET
+
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: backend-secret
+                key: JWT_SECRET
+
+          - name: SESSION_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: backend-secret
+                key: SESSION_SECRET
+
+          - name: NODE_ENV
+            value: "production"
+
+          - name: PORT
+            value: "8000"
         ports:
         - containerPort: 8000
         livenessProbe: 
