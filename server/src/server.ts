@@ -1,60 +1,17 @@
-import express, { Response, Request } from "express"
-import dotenv from "dotenv"
-import http from "http"
-import cors from "cors"
- 
-import './config/passport';   
-import { SocketEvent, SocketId } from "./types/socket"
-import { USER_CONNECTION_STATUS, User } from "./types/user"
-import { Server } from "socket.io"
-import path from "path"
-import gitRoutes from './routes/gitRoutes';
-import mongoose from 'mongoose';
-       // Ensure passport config runs
-import authRoutes from './routes/authRoutes'; // Import the auth routes
 
-dotenv.config() // Load .env first
+const app = express();
+app.use(express.json());
 
-const MONGODB_URI = process.env.DATABASE_URL;
-if (!MONGODB_URI) {
-    console.error('FATAL ERROR: DATABASE_URL is not defined.');
-    process.exit(1);
-}
+app.use(cors({ origin: "*", credentials: true }));
 
+app.use(express.static(path.join(__dirname, "public")));
 
-const app = express()
-app.use(express.json())
+app.use("/api/git", gitRoutes);
+app.use("/api/auth", authRoutes);
 
-const allowedOrigins = [
-     'http://localhost:5173',
-	 'https://synctogether.netlify.app',
-];
-
-// 2. Configure the CORS middleware
-app.use(cors({
-    origin: function(origin, callback){
-        // Check if the incoming request's origin is in our allowed list
-        if (allowedOrigins.indexOf(origin as any) !== -1 || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'));
-        }
-    },
-    credentials: true
-}));
-
-app.use(express.static(path.join(__dirname, "public"))) // Serve static files
-
-
-app.use('/api/git', gitRoutes);
-
-app.use('/api/auth', authRoutes); 
-
+// HEALTH CHECK FOR K8s
 app.get("/health", (req, res) => res.status(200).send("OK"));
 
-
-
-// Mount auth routes under /api/auth
 
 const server = http.createServer(app)
 const io = new Server(server, {
@@ -347,30 +304,16 @@ io.on("connection", (socket) => {
 
 
 
-
-const PORT = process.env.PORT || 3000
-
-
-//app.get("/", (req: Request, res: Response) => {
-	// Send the index.html file
-//	res.sendFile(path.join(__dirname, "..", "public", "index.html"))
-//})
-
-if (!MONGODB_URI) {
-    console.error('FATAL ERROR: DATABASE_URL is not defined in environment variables.');
-   process.exit(1); // Exit if DB connection string is missing
-}
-
+// ---- MongoDB connect (ONLY ONCE) ----
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected successfully.'))
+  .then(() => console.log("MongoDB connected successfully."))
   .catch(err => {
-      console.error('MongoDB connection error:', err);
-      process.exit(1); // Exit if connection fails
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
   });
 
-
-
-
+// ---- Start Server LAST ----
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-	console.log(`Listening on port ${PORT}`)
-})
+  console.log(`Listening on port ${PORT}`);
+});
