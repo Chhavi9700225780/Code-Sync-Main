@@ -6,29 +6,21 @@ metadata:
   labels:
     role: frontend
     env: demo
-spec: 
+spec:
   replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 25%
   selector:
-    matchLabels: 
+    matchLabels:
       role: frontend
   template:
     metadata:
       labels:
         role: frontend
-    spec: 
+    spec:
       imagePullSecrets:
       - name: ecr-registry-secret
       containers:
       - name: frontend
         image: 619071310531.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
-        imagePullPolicy: Always
-        env:
-          - name: REACT_APP_BACKEND_URL
-            value: "http://api.dovz.shop/api/notes/"
         ports:
-        - containerPort: 3000
+        - containerPort: 80
+        imagePullPolicy: Always
