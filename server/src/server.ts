@@ -3,14 +3,14 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({ origin: "*", credentials: true }));
+// HEALTH CHECK FOR K8s
+app.get("/health", (req, res) => res.status(200).send("OK"));
 
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api/git", gitRoutes);
 app.use("/api/auth", authRoutes);
 
-// HEALTH CHECK FOR K8s
-app.get("/health", (req, res) => res.status(200).send("OK"));
 
 
 const server = http.createServer(app)
