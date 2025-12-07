@@ -48,7 +48,13 @@ app.use(express.static(path.join(__dirname, "public"))) // Serve static files
 
 app.use('/api/git', gitRoutes);
 
-app.use('/api/auth', authRoutes); // Mount auth routes under /api/auth
+app.use('/api/auth', authRoutes); 
+
+app.get("/health", (req, res) => res.status(200).send("OK"));
+
+
+
+// Mount auth routes under /api/auth
 
 const server = http.createServer(app)
 const io = new Server(server, {
@@ -350,16 +356,6 @@ const PORT = process.env.PORT || 3000
 //	res.sendFile(path.join(__dirname, "..", "public", "index.html"))
 //})
 
-app.get("/api/auth/health", (req, res) => {
-  res.status(200).send("OK");
-});
-
-
-server.listen(PORT, () => {
-	console.log(`Listening on port ${PORT}`)
-})
-
-
 if (!MONGODB_URI) {
     console.error('FATAL ERROR: DATABASE_URL is not defined in environment variables.');
    process.exit(1); // Exit if DB connection string is missing
@@ -371,3 +367,10 @@ mongoose.connect(MONGODB_URI)
       console.error('MongoDB connection error:', err);
       process.exit(1); // Exit if connection fails
   });
+
+
+
+
+server.listen(PORT, () => {
+	console.log(`Listening on port ${PORT}`)
+})

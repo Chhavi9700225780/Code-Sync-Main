@@ -74,19 +74,19 @@ spec:
             value: "production"
 
           - name: PORT
-            value: "8000"
+            value: "3000"
         ports:
-        - containerPort: 8000
+        - containerPort: 3000
         livenessProbe: 
           httpGet:
-            path: /api/auth/health
-            port: 8000
+            path: /health
+            port: 3000
           initialDelaySeconds: 2
           periodSeconds: 5
         readinessProbe:
           httpGet:
-            path: /api/auth/health
-            port: 8000
+            path: /health
+            port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
           successThreshold: 1
