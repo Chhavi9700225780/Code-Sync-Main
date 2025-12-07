@@ -345,10 +345,15 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3000
 
 
-app.get("/", (req: Request, res: Response) => {
+//app.get("/", (req: Request, res: Response) => {
 	// Send the index.html file
-	res.sendFile(path.join(__dirname, "..", "public", "index.html"))
-})
+//	res.sendFile(path.join(__dirname, "..", "public", "index.html"))
+//})
+
+app.get("/api/auth/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 
 server.listen(PORT, () => {
 	console.log(`Listening on port ${PORT}`)
