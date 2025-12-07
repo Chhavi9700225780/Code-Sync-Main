@@ -1,40 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: 
+metadata:
+  name: mongodb
   namespace: three-tier
-  name: postgres
-spec: 
+spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: mongodb
   template:
     metadata:
-      labels: 
-        app: postgres
-    spec: 
+      labels:
+        app: mongodb
+    spec:
       containers:
-      - name: postgres
-        image: postgres:latest
+      - name: mongodb
+        image: mongo:6.0
         ports:
-        - containerPort: 5432
-        env: 
-          - name: POSTGRES_USER
-            valueFrom:
-              secretKeyRef:
-                name: postgres-sec
-                key: username
-          - name: POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: postgres-sec
-                key: password
-          - name: POSTGRES_DB
-            value: mydatabase
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: password
         volumeMounts:
-          - name: postgres-volume
-            mountPath: /var/lib/postgresql/data
-      volumes: 
-      - name: postgres-volume
+        - name: mongodb-storage
+          mountPath: /data/db  
+      volumes:
+      - name: mongodb-storage
         persistentVolumeClaim:
-          claimName: postgres-volume-claim
+          claimName: mongodb-pvc
