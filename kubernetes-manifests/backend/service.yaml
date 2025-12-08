@@ -3,10 +3,11 @@ kind: Service
 metadata:
   name: api
   namespace: three-tier
-spec: 
+spec:
   ports:
-  - port: 8000
+  - port: 3000        # The port you want to expose to the internet
+    targetPort: 3000  # The port your container listens on
     protocol: TCP
-  type: ClusterIP
+  type: LoadBalancer  # <--- CHANGE THIS from ClusterIP
   selector:
     role: api
