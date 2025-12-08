@@ -5,6 +5,10 @@ metadata:
   namespace: three-tier
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-stickiness-policy-name: "CookiePolicy"
+    service.beta.kubernetes.io/aws-load-balancer-stickiness-policy-expiration-period: "3600"
+    service.beta.kubernetes.io/aws-load-balancer-stickiness-type: "lb_cookie"
 spec:
   ports:
   - port: 3000        # The port you want to expose to the internet
