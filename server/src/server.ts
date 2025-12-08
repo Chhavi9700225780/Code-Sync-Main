@@ -30,6 +30,8 @@ app.use(express.json());
 const allowedOrigins = [
      'http://localhost:5173',
      'https://synctogether.netlify.app',
+     'http://k8s-threetie-frontend-267d7807cc-e770833b324085ff.elb.us-east-1.amazonaws.com'
+
 ];
 
 // 2. Configure CORS
