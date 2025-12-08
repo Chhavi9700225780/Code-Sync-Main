@@ -16,7 +16,7 @@ pipeline {
             steps {
                 cleanWs()
             }
-        }squ_33e4e83ed867eee305e90d044f03b0175e593f64
+        }
         stage('Checkout from Git') {
             steps {
                 git branch: 'main', credentialsId: 'GITHUB', url: 'https://github.com/Chhavi9700225780/Code-Sync-Main.git'
