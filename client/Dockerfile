@@ -18,7 +18,7 @@ COPY . .
 
 # --- Build-time Environment Variable ---
 # Set ARG for the backend URL, default to localhost for safety
-ARG VITE_BACKEND_URL=http://localhost:3000
+ARG VITE_BACKEND_URL=http://k8s-threetie-api-eacffe0dac-91244b780efcfae1.elb.us-east-1.amazonaws.com:3000
 
 # Make the ARG available as an environment variable *during the build*
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
