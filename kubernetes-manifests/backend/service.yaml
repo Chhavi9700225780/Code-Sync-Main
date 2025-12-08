@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: api
   namespace: three-tier
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
   ports:
   - port: 3000        # The port you want to expose to the internet
