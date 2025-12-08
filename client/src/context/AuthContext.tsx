@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextType>(undefined as any);
 // or rely solely on the fallback for now.
 // For Vite, ensure target in tsconfig.json is 'esnext' or similar if using import.meta.env
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://k8s-threetie-api-eacffe0dac-91244b780efcfae1.elb.us-east-1.amazonaws.com:3000', // Adjusted access
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://k8s-threetie-api-068c246db8-507886c27474ccba.elb.us-east-1.amazonaws.com:3000', // Adjusted access
 });
 // --- END FIX ---
 
