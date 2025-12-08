@@ -21,6 +21,14 @@ spec:
       containers:
       - name: frontend
         image: 619071310531.dkr.ecr.us-east-1.amazonaws.com/frontend:16
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
-        imagePullPolicy: Always
+        
+        # --- NEW SECTION: CONNECT FRONTEND TO BACKEND ---
+        env:
+          # CRITICAL: The 'name' below MUST match the variable used in your frontend source code 
+          # (e.g., VITE_API_URL, REACT_APP_API_URL, or NEXT_PUBLIC_API_URL).
+          - name: VITE_BACKEND_URL 
+            # Replace the value below with the AWS LoadBalancer URL of your Backend Service
+            value: "http://<YOUR_BACKEND_LOADBALANCER_DNS>:3000"
