@@ -30,8 +30,8 @@ pipeline {
                             $SCANNER_HOME/bin/sonar-scanner \
                             -Dsonar.projectKey=backend \
                             -Dsonar.sources=. \
-                            -Dsonar.host.url=http://44.201.143.100:9000 \
-                            -Dsonar.login=sqp_3ae7725f7b024188a573e8a06c276d5a3432e91e
+                            -Dsonar.host.url=http://54.208.166.56:9000 \
+                            -Dsonar.login=sqp_9de0a0406c6bbb238fc15029cb696b64bfa9fd71
                         '''
                     }
                 }
@@ -46,7 +46,7 @@ pipeline {
         }
         stage('OWASP Dependency-Check Scan') {
             steps {
-                dir('backend') {
+                dir('server') {
                     dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
                     dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
                 }
@@ -54,7 +54,7 @@ pipeline {
         }
         stage('Trivy File Scan') {
             steps {
-                dir('backend') {
+                dir('server') {
                     sh 'trivy fs . > trivyfs.txt'
                 }
             }
@@ -62,7 +62,7 @@ pipeline {
         stage("Docker Image Build") {
             steps {
                 script {
-                    dir('backend') {
+                    dir('server') {
                             sh 'docker system prune -f'
                             sh 'docker container prune -f'
                             sh 'docker build -t ${AWS_ECR_REPO_NAME} .'
