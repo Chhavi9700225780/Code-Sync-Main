@@ -3,17 +3,12 @@ kind: Service
 metadata:
   name: api
   namespace: three-tier
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
-    service.beta.kubernetes.io/aws-load-balancer-stickiness-policy-name: "CookiePolicy"
-    service.beta.kubernetes.io/aws-load-balancer-stickiness-policy-expiration-period: "3600"
-    service.beta.kubernetes.io/aws-load-balancer-stickiness-type: "lb_cookie"
 spec:
-  ports:
-  - port: 3000        # The port you want to expose to the internet
-    targetPort: 3000  # The port your container listens on
-    protocol: TCP
-  type: LoadBalancer  # <--- CHANGE THIS from ClusterIP
+  type: NodePort          # <--- CHANGED: This prepares the bridge
   selector:
     role: api
+  ports:
+    - protocol: TCP
+      port: 3000          # Internal usage inside the cluster
+      targetPort: 3000    # The port your container is running on
+      nodePort: 31000     # <--- ADDED: The "Bridge" port for AWS
