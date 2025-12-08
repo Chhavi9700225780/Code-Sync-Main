@@ -31,4 +31,4 @@ spec:
           # (e.g., VITE_API_URL, REACT_APP_API_URL, or NEXT_PUBLIC_API_URL).
           - name: VITE_BACKEND_URL 
             # Replace the value below with the AWS LoadBalancer URL of your Backend Service
-            value: "http://<YOUR_BACKEND_LOADBALANCER_DNS>:3000"
+            value: "http://k8s-threetie-api-eacffe0dac-91244b780efcfae1.elb.us-east-1.amazonaws.com:3000"
