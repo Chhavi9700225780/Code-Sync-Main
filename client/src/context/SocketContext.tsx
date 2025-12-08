@@ -29,7 +29,7 @@ export const useSocket = (): SocketContextType => {
     return context
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://k8s-threetie-api-eacffe0dac-91244b780efcfae1.elb.us-east-1.amazonaws.com:3000"
 //const SOCKET_URL = "http://localhost:3000"; // <-- Connect via host mapping
 
   const WebRTCSocketEvent = {
